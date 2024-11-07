@@ -16,8 +16,8 @@ names = ['제나희', '최한준', '오주형']
 usernames = ['jenahee', 'choihanjun', 'ohjoohyung']
 passwords = ['password123', 'password123', 'password123']
 
+# 비밀번호 해시 생성
 hashed_passwords = stauth.Hasher(passwords).generate()
-
 
 # 데이터베이스 초기화 함수
 def init_db(db_file):
@@ -53,6 +53,11 @@ def load_user_info():
         for name, username, hashed_password in zip(names, usernames, hashed_passwords):
             cursor.execute('INSERT INTO user_info (username, name, password) VALUES (?, ?, ?)',
                            (username, name, hashed_password))
+        conn.commit()
+    else:
+        # 기존 사용자들의 비밀번호를 업데이트
+        for name, username, hashed_password in zip(names, usernames, hashed_passwords):
+            cursor.execute('UPDATE user_info SET password = ? WHERE username = ?', (hashed_password, username))
         conn.commit()
     conn.close()
 
@@ -112,16 +117,12 @@ def main():
     for username, name, password in users:
         credentials['usernames'][username] = {'name': name, 'password': password}
 
-    authenticator = stauth.Authenticate(
-        credentials,
-        'some_cookie_name',
-        'some_signature_key',
-        cookie_expiry_days=1
-    )
+    # 인증 객체 생성
+    authenticator = stauth.Authenticate(credentials, 'some_cookie_name', 'some_signature_key', cookie_expiry_days=1)
 
     # 로그인 위젯
     try:
-        name, authentication_status, username = authenticator.login('로그인', 'main')
+        name, authentication_status, username = authenticator.login('로그인')
     except Exception as e:
         st.error(e)
         return
@@ -130,7 +131,7 @@ def main():
         st.write(f"안녕하세요, {name}님!")
 
         # 로그아웃 버튼
-        authenticator.logout('로그아웃', 'sidebar')
+        authenticator.logout('로그아웃')
 
         # 비밀번호 변경
         if st.sidebar.button('비밀번호 변경'):
