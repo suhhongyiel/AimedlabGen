@@ -10,7 +10,14 @@ import io
 import sqlite3
 import nibabel as nib  # NIfTI 파일 처리를 위한 라이브러리
 import streamlit_authenticator as stauth
-import bcrypt
+
+# 사용자 정보 설정
+names = ['제나희', '최한준', '오주형']
+usernames = ['jenahee', 'choihanjun', 'ohjoohyung']
+passwords = ['password123', 'password123', 'password123']
+
+# 비밀번호 해시 생성
+hashed_passwords = stauth.Hasher(passwords).generate()
 
 # 데이터베이스 초기화 함수
 def init_db(db_file):
@@ -47,11 +54,6 @@ def load_user_info():
             cursor.execute('INSERT INTO user_info (username, name, password) VALUES (?, ?, ?)',
                            (username, name, hashed_password))
         conn.commit()
-    else:
-        # 기존 사용자들의 비밀번호를 업데이트
-        for name, username, hashed_password in zip(names, usernames, hashed_passwords):
-            cursor.execute('UPDATE user_info SET password = ? WHERE username = ?', (hashed_password, username))
-        conn.commit()
     conn.close()
 
 # 비밀번호 업데이트 함수
@@ -84,16 +86,6 @@ def calculate_psnr(original, generated):
     psnr = 20 * log10(max_pixel / sqrt(mse))
     return psnr
 
-# 사용자 정보
-names = ['제나희', '최한준', '오주형']
-usernames = ['jenahee', 'choihanjun', 'ohjoohyung']
-# 비밀번호는 사전에 해시하여 저장
-hashed_passwords = [
-    '$2b$12$KIX8yM6l5a/Yo4cE3QxV9uFzyYyjJXxI7B0zYF27az7c77ODy/GG2',
-    '$2b$12$YeN6RMxO95fJFX/dyYZrOuh1Y1GQ5AsB1JkHJdvXy.9iZmsGvjP7a',
-    '$2b$12$gHzzTI6EQ8YUy5Y1FJLR8O9vBVnXzI7YV7b6KZ1vUjLHgGq4kYfke'
-]
-
 # 메인 함수
 def main():
     st.title("NIfTI 파일 제출 및 PSNR 평가")
@@ -105,42 +97,47 @@ def main():
     init_db(db_file)
     load_user_info()
 
-    # 인증 객체 생성
+    # 사용자 인증 설정
     credentials = {
-        'usernames': {
-            'jenahee': {
-                'name': '제나희',
-                'password': 'hashed_password1'
-            },
-            'choihanjun': {
-                'name': '최한준',
-                'password': 'hashed_password2'
-            },
-            'ohjoohyung': {
-                'name': '오주형',
-                'password': 'hashed_password3'
-            }
-        }
+        'usernames': {}
     }
 
-    for name, username, hashed_password in zip(names, usernames, hashed_passwords):
-        credentials['usernames'][username] = {'name': name, 'password': hashed_password}
+    # 데이터베이스에서 사용자 정보 로드
+    conn = sqlite3.connect(db_file)
+    cursor = conn.cursor()
+    cursor.execute('SELECT username, name, password FROM user_info')
+    users = cursor.fetchall()
+    conn.close()
 
-    authenticator = stauth.Authenticate(credentials, 'my_cookie_name', 'my_signature_key', cookie_expiry_days=1)
+    for username, name, password in users:
+        credentials['usernames'][username] = {'name': name, 'password': password}
 
+    authenticator = stauth.Authenticate(
+        credentials,
+        'some_cookie_name',
+        'some_signature_key',
+        cookie_expiry_days=1
+    )
 
     # 로그인 위젯
-    name, authentication_status, username = authenticator.login('로그인', 'main')
+    try:
+        name, authentication_status, username = authenticator.login('로그인', 'main')
+    except Exception as e:
+        st.error(e)
+        return
 
     if authentication_status:
         st.write(f"안녕하세요, {name}님!")
 
+        # 로그아웃 버튼
+        authenticator.logout('로그아웃', 'sidebar')
+
         # 비밀번호 변경
-        if st.button('비밀번호 변경'):
+        if st.sidebar.button('비밀번호 변경'):
             try:
-                new_password = st.text_input('새로운 비밀번호를 입력하세요', type='password')
-                confirm_password = st.text_input('비밀번호 확인', type='password')
-                if st.button('비밀번호 변경 확인'):
+                new_password = st.sidebar.text_input('새로운 비밀번호를 입력하세요', type='password')
+                confirm_password = st.sidebar.text_input('비밀번호 확인', type='password')
+                if st.sidebar.button('비밀번호 변경 확인'):
                     if new_password == confirm_password:
                         if len(new_password) >= 6:
                             new_hashed_password = stauth.Hasher([new_password]).generate()[0]
@@ -188,8 +185,9 @@ def main():
                         if original_file in uploaded_files:
                             with zip_ref.open(original_file) as file:
                                 # 업로드된 파일을 메모리에 로드
-                                uploaded_nii = nib.FileHolder(fileobj=file)
-                                generated_image = nib.Nifti1Image.from_file_map({'header': uploaded_nii, 'image': uploaded_nii}).get_fdata()
+                                file_content = file.read()
+                                file_like_object = io.BytesIO(file_content)
+                                generated_image = nib.load(file_like_object).get_fdata()
                         else:
                             st.error(f"'{original_file}' 파일이 업로드된 ZIP에 포함되어 있지 않습니다.")
                             return
