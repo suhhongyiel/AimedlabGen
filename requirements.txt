@@ -11,3 +11,4 @@ psycopg2-binary
 torch
 torchvision
 pillow
+nibabel
