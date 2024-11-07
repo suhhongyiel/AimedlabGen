@@ -92,7 +92,6 @@ def calculate_psnr(original, generated):
     return psnr
 
 # 메인 함수
-# 메인 함수
 def main():
     st.title("NIfTI 파일 제출 및 PSNR 평가")
     st.write("생성한 NIfTI(.nii) 파일을 제출하여 원본 데이터와의 PSNR 점수를 확인하세요.")
@@ -103,6 +102,11 @@ def main():
     init_db(db_file)
     load_user_info()
 
+    # 사용자 인증 설정
+    credentials = {
+        'usernames': {}
+    }
+
     # 데이터베이스에서 사용자 정보 로드
     conn = sqlite3.connect(db_file)
     cursor = conn.cursor()
@@ -110,21 +114,15 @@ def main():
     users = cursor.fetchall()
     conn.close()
 
-    usernames_db = []
-    names_db = []
-    hashed_passwords_db = []
-
     for username, name, password in users:
-        usernames_db.append(username)
-        names_db.append(name)
-        hashed_passwords_db.append(password)
+        credentials['usernames'][username] = {'name': name, 'password': password}
 
-    # 인증 객체 생성 (credentials를 사용하지 않고 개별 리스트를 전달)
-    authenticator = stauth.Authenticate(names_db, usernames_db, hashed_passwords_db, 'some_cookie_name', 'some_signature_key', cookie_expiry_days=1)
+    # 인증 객체 생성
+    authenticator = stauth.Authenticate(credentials, 'some_cookie_name', 'some_signature_key', cookie_expiry_days=1)
 
     # 로그인 위젯
     try:
-        name, authentication_status = authenticator.login('로그인')
+        name, authentication_status, username = authenticator.login('로그인')
     except Exception as e:
         st.error(e)
         return
@@ -135,9 +133,6 @@ def main():
         # 로그아웃 버튼
         authenticator.logout('로그아웃')
 
-        # 현재 사용자 이름(username) 가져오기
-        username = usernames_db[names_db.index(name)]
-
         # 비밀번호 변경
         if st.sidebar.button('비밀번호 변경'):
             try:
@@ -150,43 +145,9 @@ def main():
                             update_password(username, new_hashed_password)
                             st.success('비밀번호가 성공적으로 변경되었습니다.')
                             # 인증 정보 업데이트
-                            index = usernames_db.index(username)
-                            hashed_passwords_db[index] = new_hashed_password
+                            credentials['usernames'][username]['password'] = new_hashed_password
                             # 인증 객체 재생성
-                            authenticator = stauth.Authenticate(names_db, usernames_db, hashed_passwords_db, 'some_cookie_name', 'some_signature_key', cookie_expiry_days=1)
-                        else:
-                            st.error('비밀번호는 최소 6자 이상이어야 합니다.')
-                    else:
-                        st.error('비밀번호가 일치하지 않습니다.')
-            except Exception as e:
-                st.error(e)
-        return
-
-    if authentication_status:
-        st.write(f"안녕하세요, {name}님!")
-
-        # 로그아웃 버튼
-        authenticator.logout('로그아웃')
-
-        # 현재 사용자 이름(username) 가져오기
-        username = usernames_db[names_db.index(name)]
-
-        # 비밀번호 변경
-        if st.sidebar.button('비밀번호 변경'):
-            try:
-                new_password = st.sidebar.text_input('새로운 비밀번호를 입력하세요', type='password')
-                confirm_password = st.sidebar.text_input('비밀번호 확인', type='password')
-                if st.sidebar.button('비밀번호 변경 확인'):
-                    if new_password == confirm_password:
-                        if len(new_password) >= 6:
-                            new_hashed_password = stauth.Hasher([new_password]).generate()[0]
-                            update_password(username, new_hashed_password)
-                            st.success('비밀번호가 성공적으로 변경되었습니다.')
-                            # 인증 정보 업데이트
-                            index = usernames_db.index(username)
-                            hashed_passwords_db[index] = new_hashed_password
-                            # 인증 객체 재생성
-                            authenticator = stauth.Authenticate(names_db, usernames_db, hashed_passwords_db, 'some_cookie_name', 'some_signature_key', cookie_expiry_days=1)
+                            authenticator = stauth.Authenticate(credentials, 'some_cookie_name', 'some_signature_key', cookie_expiry_days=1)
                         else:
                             st.error('비밀번호는 최소 6자 이상이어야 합니다.')
                     else:
@@ -272,5 +233,6 @@ def main():
         st.error('사용자 이름이나 비밀번호가 올바르지 않습니다.')
     elif authentication_status == None:
         st.warning('인증이 필요합니다.')
+
 if __name__ == "__main__":
     main()
