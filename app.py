@@ -10,6 +10,7 @@ import io
 import sqlite3
 import nibabel as nib  # NIfTI 파일 처리를 위한 라이브러리
 import streamlit_authenticator as stauth
+from streamlit_authenticator.utilities.hasher import Hasher
 
 # 사용자 정보 설정
 names = ['제나희', '최한준', '오주형']
@@ -17,7 +18,7 @@ usernames = ['jenahee', 'choihanjun', 'ohjoohyung']
 passwords = ['password123', 'password123', 'password123']
 
 # 비밀번호 해시 생성
-hashed_passwords = stauth.Hasher(passwords).generate()
+hashed_passwords = Hasher(passwords).generate()
 
 # 데이터베이스 초기화 함수
 def init_db(db_file):
@@ -141,7 +142,7 @@ def main():
                 if st.sidebar.button('비밀번호 변경 확인'):
                     if new_password == confirm_password:
                         if len(new_password) >= 6:
-                            new_hashed_password = stauth.Hasher([new_password]).generate()[0]
+                            new_hashed_password = Hasher([new_password]).generate()[0]
                             update_password(username, new_hashed_password)
                             st.success('비밀번호가 성공적으로 변경되었습니다.')
                             # 인증 정보 업데이트
