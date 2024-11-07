@@ -12,3 +12,5 @@ torch
 torchvision
 pillow
 nibabel
+streamlit-authenticator
+bcrypt
