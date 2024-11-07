@@ -116,7 +116,7 @@ def main():
     authenticator = stauth.Authenticate(credentials, 'some_cookie_name', 'some_signature_key', cookie_expiry_days=1)
 
     # 로그인 위젯
-    name, authentication_status, username = authenticator.login('로그인', 'main')
+    name, authentication_status, username = authenticator.login('로그인', location='main')
 
     if authentication_status:
         st.write(f"안녕하세요, {name}님!")
