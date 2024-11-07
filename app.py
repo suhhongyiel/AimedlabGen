@@ -92,7 +92,8 @@ def main():
 
             # 이미지 변환 정의
             transform = transforms.Compose([
-                transforms.Resize((256, 256)),
+                transforms.Grayscale(num_output_channels=1),
+                transforms.Resize((28, 28)),
                 transforms.ToTensor()
             ])
 
@@ -105,14 +106,16 @@ def main():
             for img_file in image_files:
                 img_path = os.path.join(image_folder, img_file)
                 original_image = Image.open(img_path).convert('RGB')
-                input_tensor = transform(original_image).unsqueeze(0)
+                input_tensor = transform(original_image).unsqueeze(0).view(-1, 28*28)
+
 
                 # 모델 추론
                 with torch.no_grad():
-                    generated_tensor = model(input_tensor)
+                    generated_output = model(input_tensor)
 
-                # 텐서를 이미지로 변환
-                generated_image = transforms.ToPILImage()(generated_tensor.squeeze(0))
+                # 출력 텐서를 이미지로 변환
+                generated_image = generated_output.view(28, 28)
+                generated_image = transforms.ToPILImage()(generated_image.unsqueeze(0))
 
                 # PSNR 계산
                 psnr = calculate_psnr(original_image, generated_image)
