@@ -16,8 +16,9 @@ names = ['제나희', '최한준', '오주형']
 usernames = ['jenahee', 'choihanjun', 'ohjoohyung']
 passwords = ['password123', 'password123', 'password123']
 
-# 비밀번호 해시 생성
-hashed_passwords = stauth.Hasher(passwords).generate()
+# 비밀번호 해시 생성 (generate() -> hash())
+hashed_passwords = stauth.Hasher(passwords).hash()
+
 
 # 데이터베이스 초기화 함수
 def init_db(db_file):
