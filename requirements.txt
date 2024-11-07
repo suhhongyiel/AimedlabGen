@@ -1,0 +1,11 @@
+numpy
+matplotlib
+pymysql
+pandas
+fpdf2
+requests
+datetime
+sqlalchemy
+plotly
+psycopg2-binary
+torch
