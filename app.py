@@ -8,11 +8,16 @@ from math import log10, sqrt
 import zipfile
 import io
 import sqlite3
-import nibabel as nib  # NIfTI 파일 처리를 위한 라이브러리
+import nibabel as nib
 import streamlit_authenticator as stauth
+import pkg_resources
 
 # 라이브러리 버전 확인
-st.write(f"Streamlit Authenticator 버전: {stauth.__version__}")
+try:
+    version = pkg_resources.get_distribution('streamlit-authenticator').version
+    st.write(f"Streamlit Authenticator 버전: {version}")
+except Exception as e:
+    st.write(f"라이브러리 버전을 가져오는 중 오류가 발생했습니다: {e}")
 
 # 사용자 정보 설정
 names = ['제나희', '최한준', '오주형']
@@ -21,6 +26,14 @@ passwords = ['password123', 'password123', 'password123']
 
 # 비밀번호 해시 생성
 hashed_passwords = stauth.Hasher(passwords).generate()
+
+# credentials 딕셔너리 생성
+credentials = {
+    'usernames': {}
+}
+
+for uname, name, pwd in zip(usernames, names, hashed_passwords):
+    credentials['usernames'][uname] = {'name': name, 'password': pwd}
 
 # 데이터베이스 초기화 함수
 def init_db(db_file):
@@ -110,8 +123,8 @@ def main():
 
     # 로그인 위젯
     try:
-        name, authentication_status = authenticator.login('로그인')
-        st.write(f"login() 함수 반환값: {name}, {authentication_status}")
+        name, authentication_status, username = authenticator.login('로그인')
+        st.write(f"login() 함수 반환값: {name}, {authentication_status}, {username}")
     except Exception as e:
         st.error(e)
         return
@@ -121,9 +134,6 @@ def main():
 
         # 로그아웃 버튼
         authenticator.logout('로그아웃')
-
-        # 현재 사용자 이름(username) 가져오기
-        username = usernames[names.index(name)]
 
         # 비밀번호 변경
         if st.sidebar.button('비밀번호 변경'):
