@@ -102,11 +102,6 @@ def main():
     init_db(db_file)
     load_user_info()
 
-    # 사용자 인증 설정
-    credentials = {
-        'usernames': {}
-    }
-
     # 데이터베이스에서 사용자 정보 로드
     conn = sqlite3.connect(db_file)
     cursor = conn.cursor()
@@ -114,15 +109,21 @@ def main():
     users = cursor.fetchall()
     conn.close()
 
+    usernames_db = []
+    names_db = []
+    hashed_passwords_db = []
+
     for username, name, password in users:
-        credentials['usernames'][username] = {'name': name, 'password': password}
+        usernames_db.append(username)
+        names_db.append(name)
+        hashed_passwords_db.append(password)
 
     # 인증 객체 생성
-    authenticator = stauth.Authenticate(credentials, 'some_cookie_name', 'some_signature_key', cookie_expiry_days=1)
+    authenticator = stauth.Authenticate(names_db, usernames_db, hashed_passwords_db, 'some_cookie_name', 'some_signature_key', cookie_expiry_days=1)
 
     # 로그인 위젯
     try:
-        name, authentication_status, username = authenticator.login('로그인')
+        name, authentication_status = authenticator.login('로그인')
     except Exception as e:
         st.error(e)
         return
@@ -132,6 +133,9 @@ def main():
 
         # 로그아웃 버튼
         authenticator.logout('로그아웃')
+
+        # 현재 사용자 이름(username) 가져오기
+        username = usernames_db[names_db.index(name)]
 
         # 비밀번호 변경
         if st.sidebar.button('비밀번호 변경'):
@@ -145,7 +149,10 @@ def main():
                             update_password(username, new_hashed_password)
                             st.success('비밀번호가 성공적으로 변경되었습니다.')
                             # 인증 정보 업데이트
-                            credentials['usernames'][username]['password'] = new_hashed_password
+                            index = usernames_db.index(username)
+                            hashed_passwords_db[index] = new_hashed_password
+                            # 인증 객체 재생성
+                            authenticator = stauth.Authenticate(names_db, usernames_db, hashed_passwords_db, 'some_cookie_name', 'some_signature_key', cookie_expiry_days=1)
                         else:
                             st.error('비밀번호는 최소 6자 이상이어야 합니다.')
                     else:
