@@ -9,3 +9,5 @@ sqlalchemy
 plotly
 psycopg2-binary
 torch
+torchvision
+pillow
