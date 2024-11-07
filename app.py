@@ -107,16 +107,30 @@ def main():
 
     # 인증 객체 생성
     credentials = {
-        'usernames': {}
+        'usernames': {
+            'jenahee': {
+                'name': '제나희',
+                'password': 'hashed_password1'
+            },
+            'choihanjun': {
+                'name': '최한준',
+                'password': 'hashed_password2'
+            },
+            'ohjoohyung': {
+                'name': '오주형',
+                'password': 'hashed_password3'
+            }
+        }
     }
 
     for name, username, hashed_password in zip(names, usernames, hashed_passwords):
         credentials['usernames'][username] = {'name': name, 'password': hashed_password}
 
-    authenticator = stauth.Authenticate(credentials, 'some_cookie_name', 'some_signature_key', cookie_expiry_days=1)
+    authenticator = stauth.Authenticate(credentials, 'my_cookie_name', 'my_signature_key', cookie_expiry_days=1)
+
 
     # 로그인 위젯
-    name, authentication_status, username = authenticator.login('로그인', location='main')
+    name, authentication_status, username = authenticator.login('로그인', 'main')
 
     if authentication_status:
         st.write(f"안녕하세요, {name}님!")
