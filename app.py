@@ -11,6 +11,9 @@ import sqlite3
 import nibabel as nib  # NIfTI 파일 처리를 위한 라이브러리
 import streamlit_authenticator as stauth
 
+# 라이브러리 버전 확인
+st.write(f"Streamlit Authenticator 버전: {stauth.__version__}")
+
 # 사용자 정보 설정
 names = ['제나희', '최한준', '오주형']
 usernames = ['jenahee', 'choihanjun', 'ohjoohyung']
@@ -108,6 +111,7 @@ def main():
     # 로그인 위젯
     try:
         name, authentication_status = authenticator.login('로그인')
+        st.write(f"login() 함수 반환값: {name}, {authentication_status}")
     except Exception as e:
         st.error(e)
         return
