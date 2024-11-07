@@ -12,5 +12,5 @@ torch
 torchvision
 pillow
 nibabel
-streamlit-authenticator
-bcrypt
+streamlit-authenticator==0.1.5
+bcrypt==3.2.0
