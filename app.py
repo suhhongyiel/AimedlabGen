@@ -21,8 +21,8 @@ except Exception as e:
 
 # 사용자 정보 설정
 names = ['제나희', '최한준', '오주형']
-usernames = ['jenahee', 'choihanjun', 'ohjoohyung']
-passwords = ['password123', 'password123', 'password123']
+usernames = ['jenahee', 'choihanjun', 'ohjoohyung', 'admin']
+passwords = ['password123', 'password123', 'password123', '123123']
 
 # 비밀번호 해시 생성
 hashed_passwords = stauth.Hasher(passwords).generate()
